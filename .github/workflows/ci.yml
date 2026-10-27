@@ -9,8 +9,9 @@ on:
       - main
 
 jobs:
+
   test:
-    name: Test Node.js API
+    name: Tests & Coverage
     runs-on: ubuntu-latest
 
     steps:
@@ -31,3 +32,29 @@ jobs:
 
       - name: Generate code coverage
         run: npm run test:coverage
+
+  docker:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            -t devops-node-api:${{ github.sha }} \
+            .
+
+      - name: Test Docker image
+        run: |
+          docker run -d \
+            --name devops-node-api \
+            -p 3000:3000 \
+            devops-node-api:${{ github.sha }}
+
+          sleep 3
+
+          curl --fail http://localhost:3000/health
