@@ -58,3 +58,29 @@ jobs:
           sleep 3
 
           curl --fail http://localhost:3000/health
+
+
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: docker
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Docker image for security scan
+        run: |
+          docker build \
+            -t devops-node-api:${{ github.sha }} \
+            .
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: 'devops-node-api:${{ github.sha }}'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'HIGH,CRITICAL'
