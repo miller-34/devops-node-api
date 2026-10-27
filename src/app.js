@@ -1,8 +1,42 @@
 const express = require('express');
 
+const {
+  register,
+  httpRequestsTotal,
+  httpRequestDurationSeconds
+} = require('./metrics');
+
 const app = express();
 
 app.use(express.json());
+
+// Middleware para coletar métricas HTTP
+app.use((req, res, next) => {
+  const start = process.hrtime.bigint();
+
+  res.on('finish', () => {
+    // Não contabiliza o próprio scraping do Prometheus
+    if (req.path === '/metrics') {
+      return;
+    }
+
+    const duration = Number(process.hrtime.bigint() - start) / 1e9;
+
+    const route = req.route?.path || req.path;
+
+    const labels = {
+      method: req.method,
+      route,
+      status_code: String(res.statusCode)
+    };
+
+    httpRequestsTotal.inc(labels);
+
+    httpRequestDurationSeconds.observe(labels, duration);
+  });
+
+  next();
+});
 
 app.get('/', (req, res) => {
   res.json({
@@ -47,6 +81,16 @@ app.get('/api/projects', (req, res) => {
       technology: 'Kubernetes'
     }
   ]);
+});
+
+// Endpoint utilizado pelo Prometheus
+app.get('/metrics', async (req, res) => {
+  try {
+    res.set('Content-Type', register.contentType);
+    res.end(await register.metrics());
+  } catch (error) {
+    res.status(500).end(error.message);
+  }
 });
 
 module.exports = app;

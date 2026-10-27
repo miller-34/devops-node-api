@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/miller-34/devops-node-api#readme",
   "dependencies": {
+    "@prometheus-io/client": "^0.16.1",
     "express": "^5.3.0"
   },
   "devDependencies": {
