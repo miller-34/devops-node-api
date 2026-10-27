@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
         - name: devops-node-api
-          image: ghcr.io/miller-34/devops-node-api:latest
+          image: ghcr.io/miller-34/devops-node-api:8d6e77c7c258f4ee2093371d0e0c3844ee7b3109
           imagePullPolicy: Always
 
           ports:
