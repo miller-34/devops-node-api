@@ -7,6 +7,9 @@ on:
   pull_request:
     branches:
       - main
+permissions:
+ contents: read
+ packages: write
 
 jobs:
 
@@ -84,3 +87,30 @@ jobs:
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'HIGH,CRITICAL'
+  publish:
+    name: Publish to GHCR
+    runs-on: ubuntu-latest
+    needs: security
+
+    # Do not publish images from pull requests
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/miller-34/devops-node-api:latest
+            ghcr.io/miller-34/devops-node-api:${{ github.sha }}
